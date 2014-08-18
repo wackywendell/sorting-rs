@@ -4,3 +4,8 @@ name = "rustscripts"
 version = "0.1.0"
 authors = [ "wackywendell@gmail.com" ]
 
+[dependencies.docopt]
+git = "https://github.com/burntsushi/docopt.rs"
+
+[dependencies.docopt_macros]
+git = "https://github.com/burntsushi/docopt.rs"

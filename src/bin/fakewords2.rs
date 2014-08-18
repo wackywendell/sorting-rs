@@ -1,61 +1,67 @@
-#![warn(non_camel_case_types)]
-#![warn(unnecessary_qualification)]
-#![warn(non_uppercase_statics)]
-#![warn(missing_doc)]
+#![feature(phase)]
+extern crate serialize;
 
-/*! Creates fake words.
+#[phase(plugin)]
+extern crate docopt_macros;
+extern crate docopt;
+
+extern crate rustscripts;
+
+#[warn(non_camel_case_types)]
+#[warn(non_snake_case_functions)]
+#[warn(unnecessary_qualification)]
+#[warn(non_uppercase_statics)]
+#[warn(missing_doc)]
+
+/** Creates fake words.
  *  First, it uses a predefined list of words to generate a markov chain
  *  for word prefixes; it then probabilistically follows this to generate
  *  fake words.
- */
-extern crate getopts;
-extern crate collections;
-use std::{os,result};
+**/
 
-use std::from_str::FromStr;
+use docopt::FlagParser;
 
-use std::io::{File,BufferedReader,IoResult};
-use collections::{TreeMap,TreeSet};
+use std::collections::{HashSet,HashMap};
 use std::rand;
 use std::rand::Rng;
+use std::io::{File,BufferedReader,IoResult};
 
-fn get_counts<K : Ord, I : Iterator<K>>(list : I) -> TreeMap<K, uint> {
-	let mut counter : TreeMap<K, uint> = TreeMap::new();
-	for key in list {
-		// TODO: if key is not in the tree, this looks for its position twice
-		//       there used to be an 'insert_or_update_with' method
-		match counter.find_mut(&key){
-			None => {counter.insert(key, 1);},
-			Some(value) => {*value += 1;}
-		}
-	}
-	counter
-}
+use rustscripts::counter;
 
-//* Build a TreeMap of "substring" : "number of occurrences"
-fn toHashes(wordlist : &[String], sublens : uint) -> TreeMap<String, uint> {
-	let iter = wordlist.iter().take_while(|k| {
+//* Build a HashMap of "substring" : "number of occurrences"
+fn to_hashes(wordlist : &[String], sublens : uint) -> HashMap<String, uint> {
+	println!("Got wordlist, length {}", wordlist.len());
+	
+	let iter = wordlist.iter().filter(|k| {
 		let kslice = k.as_slice();
 		if kslice.char_len() == 0 {false}
 		else if kslice.contains("\'") {false}
 		else if kslice.find(|c : char|{!c.is_lowercase()}).is_some() {false}
 		else {true}
-	}).flat_map(|k| {
+	});
+	let iter = iter.flat_map(|k| {
 		let kslice = k.as_slice();
 		let fullword = (["^", kslice.trim_chars(&[' ', '\t', '\r', '\n']), "$"]).concat();
         let fullchars : Vec<char> = fullword.as_slice().chars().collect();
+        
+        let chvec : Vec<String> =  
 		fullchars.as_slice().windows(sublens).map(|chars| {
-			std::str::from_chars(chars)
+			String::from_chars(chars)
 		})
+		.collect();
+		
+		//~ println!("k: {}, chvec: {}", k, chvec);
+		
+		chvec.move_iter()
 	});
-	get_counts(iter)
+	counter(iter)
 }
 
 struct WordBuilder {
-    subs : TreeMap<String, uint>,
+    subs : HashMap<String, uint>,
     list : Vec<String>,
     sublens : uint,
-    wordset : TreeSet<String>,
+    wordset : HashSet<String>,
     wordlens : Vec<uint>
 }
 
@@ -65,10 +71,10 @@ struct WordIter<'a> {
 
 impl WordBuilder {
     fn new(list : Vec<String>, sublens : uint) -> WordBuilder {
-        let mut h = TreeSet::new();
+        let mut h = HashSet::new();
         let mut wlens : Vec<uint> = Vec::new();
         for w in list.iter() {
-            h.insert(w.to_owned());
+            h.insert(w.to_string());
             let wordlen = w.len();
             for _ in range(wlens.len(), wordlen+1){
                 wlens.push(0);
@@ -78,7 +84,7 @@ impl WordBuilder {
         }
         
         WordBuilder {
-            subs : toHashes(list.as_slice(), sublens), 
+            subs : to_hashes(list.as_slice(), sublens), 
             list : list, 
             sublens : sublens,
             wordset : h,
@@ -87,7 +93,7 @@ impl WordBuilder {
     }
     
     fn word(&mut self) -> Option<String> {
-        let mut s : String = String::from_str("^");
+        let mut s : String = "^".to_string();
         
         loop {
             let mut fullsum = 0u;
@@ -125,22 +131,7 @@ impl WordBuilder {
                 return None;
             };
             
-            //~ println!("s: {}", s);
-            //~ println!("lens: {}, {}", curlens, lensum);
-            //~ print!("wordlens: ");
-            //~ for &w in self.wordlens.iter() {
-                //~ print!(" {}", w);
-            //~ }
-            //~ println("");
-            //~ println!("sums: {}, {}", endsum, fullsum);
-            
             let randnum = rand::task_rng().gen_range(0.0, 1.0);
-            //~ let endtime = match (endsum, fullsum-endsum) {
-                //~ (0,0) => {return None;},
-                //~ (0,_) => {false},
-                //~ (_,0) => {true},
-                //~ _ => (randnum < endprob)
-            //~ };
             
             let endtime = randnum < endprob;
             if (endtime && (endsum == 0)) || ((!endtime) && (fullsum-endsum==0)) {
@@ -162,20 +153,17 @@ impl WordBuilder {
                     let slen = s.as_slice().char_len();
                     let klen = k.char_len();
                     let kcut = if slen < klen - 1 {slen} else {klen - 1};
-                    //~ let olds = s.to_owned();
+                    //~ let olds = s.to_string();
                     s.push_str(k.slice_chars(kcut,klen));
                     break;
                 }
                 psum += v;
             }
-            //~ s = possibilities[0].to_owned().first();
+            
             let slen = s.as_slice().char_len();
             if s.as_slice().slice_chars(slen-1, slen) == "$" {
-                return Some(s.as_slice().slice_chars(1, slen-1).to_owned());
+                return Some(s.as_slice().slice_chars(1, slen-1).to_string());
             }
-            //~ if (breakpoint > 0 && slen - 2 >= breakpoint) {
-                //~ return None;
-            //~ }
         };
     }
     
@@ -199,25 +187,13 @@ impl<'a> Iterator<String> for WordIter<'a> {
     }
 }
 
-fn print_usage(program: &str, _opts: &[getopts::OptGroup]) {
-    println!("Usage: {} [-n NUMBER] [DICTFILE]", program);
-    println!("-n\tNUMBER\tLength of Markov chain");
-    println!("\tDICTFILE\tDictionary to use for generation");
-}
+docopt!(Args, "
+Usage: fakewords2 [-h | --help] [-n NUMBER] [DICTFILE]
 
-fn get_val<T : FromStr>(program : &str, opts : &[getopts::OptGroup],
-            matches : &getopts::Matches, optstr : &str, def : T) -> T{
-    match matches.opt_str(optstr) {
-        None => {def},
-        Some(s) => match s {
-            None => {
-                print_usage(program, opts);
-                fail!("Could not transform option {}", optstr);
-            }
-            Some(n) => n
-        }
-    }
-}
+Options:
+    -n NUMBER    use NUMBER length substrings for markovian chain
+    DICTFILE     use DICTFILE instead of /usr/share/dict/words
+", flag_n : Option<uint>, arg_DICTFILE : Option<String>)
 
 fn or_fail<T>(v : IoResult<T>) -> T {
     match v {
@@ -227,41 +203,27 @@ fn or_fail<T>(v : IoResult<T>) -> T {
 }
 
 fn main(){
-    let args : Vec<String> = os::args();
-    let program = args.get(0).as_slice();
+	let args: Args = FlagParser::parse().unwrap_or_else(|e| e.exit());
     
-    let opts = [
-        getopts::optflag("h", "help", "Print this help message"),
-        getopts::optopt("n", "", "Length of Markov chain", "NUMBER"),
-    ];
-    let matches = match getopts::getopts(args.tail(), opts) {
-        Ok(m) => { m }
-        Err(f) => { fail!(f.to_err_msg()) }
-    };
-    if matches.opt_present("help") {
-        print_usage(program, opts);
-        return;
-    }
+    let flag_n : Option<uint> = args.flag_n;
+
+    let subsetn : uint = flag_n.unwrap_or(4u);
     
-    let subsetn : uint = get_val(program, opts, &matches, "n", 4u);
-    
-    let pathstr = match matches.free.as_slice() {
-            [] => &"/usr/share/dict/words",
-            [ref s] => (*s).as_slice(),
-            _ => fail!("too many words!")
-        };
+    let pathstr = args.arg_DICTFILE.map(|s| {s}).unwrap_or("/usr/share/dict/words".to_string());
     
     let path = Path::new(pathstr);
     //~ let path = Path::new("fakewords-test.txt");
     let mut file = BufferedReader::new(File::open(&path));
     
-    let lines_opt: IoResult<Vec<String> > = result::collect(
+    let lines_opt: IoResult<Vec<String> > = std::result::collect(
         file.lines().map(|orl| {
-            orl.map(|l| {l.trim().to_owned()})
+            orl.map(|l| {l.as_slice().trim_chars(&[' ', '\t', '\r', '\n']).to_string()})
             })
         );
     let lines = or_fail(lines_opt);
     let mut wb = WordBuilder::new(lines, subsetn);
+    
+    println!("Now have a map of length {}", wb.subs.len());
     
     for w in wb.iter(){
         println!("{}",w);
