@@ -8,7 +8,7 @@ extern crate docopt;
 extern crate rustscripts;
 
 #[warn(non_camel_case_types)]
-#[warn(non_snake_case_functions)]
+#[warn(non_snake_case)]
 #[warn(unnecessary_qualification)]
 #[warn(non_uppercase_statics)]
 #[warn(missing_doc)]
@@ -24,7 +24,7 @@ use docopt::FlagParser;
 use std::collections::{HashSet,HashMap};
 use std::rand;
 use std::rand::Rng;
-use std::io::{File,BufferedReader,IoResult};
+use std::io::{File,BufferedReader};
 
 use rustscripts::counter;
 
@@ -39,9 +39,10 @@ fn to_hashes(wordlist : &[String], sublens : uint) -> HashMap<String, uint> {
 		else if kslice.find(|c : char|{!c.is_lowercase()}).is_some() {false}
 		else {true}
 	});
+	let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
 	let iter = iter.flat_map(|k| {
 		let kslice = k.as_slice();
-		let fullword = (["^", kslice.trim_chars(&[' ', '\t', '\r', '\n']), "$"]).concat();
+		let fullword = (["^", kslice.trim_chars(trimchars), "$"]).concat();
         let fullchars : Vec<char> = fullword.as_slice().chars().collect();
         
         let chvec : Vec<String> =  
@@ -52,15 +53,15 @@ fn to_hashes(wordlist : &[String], sublens : uint) -> HashMap<String, uint> {
 		
 		//~ println!("k: {}, chvec: {}", k, chvec);
 		
-		chvec.move_iter()
+		chvec.into_iter()
 	});
 	counter(iter)
 }
 
 struct WordBuilder {
     subs : HashMap<String, uint>,
-    list : Vec<String>,
-    sublens : uint,
+    // list : Vec<String>,
+    // sublens : uint,
     wordset : HashSet<String>,
     wordlens : Vec<uint>
 }
@@ -85,8 +86,8 @@ impl WordBuilder {
         
         WordBuilder {
             subs : to_hashes(list.as_slice(), sublens), 
-            list : list, 
-            sublens : sublens,
+            //list : list, 
+            //sublens : sublens,
             wordset : h,
             wordlens : wlens
         }
@@ -188,39 +189,31 @@ impl<'a> Iterator<String> for WordIter<'a> {
 }
 
 docopt!(Args, "
-Usage: fakewords2 [-h | --help] [-n NUMBER] [DICTFILE]
+Usage: fakewords2 [-h | --help] [-n <number>] [<dictfile>]
 
 Options:
-    -n NUMBER    use NUMBER length substrings for markovian chain
-    DICTFILE     use DICTFILE instead of /usr/share/dict/words
-", flag_n : Option<uint>, arg_DICTFILE : Option<String>)
+    -n <number>    use number length substrings for markovian chain
+    <dictfile>     use dictfile instead of /usr/share/dict/words
+", flag_n : Option<uint>, arg_dictfile : Option<String>)
 
-fn or_fail<T>(v : IoResult<T>) -> T {
-    match v {
-        Ok(m) => { m }
-        Err(f) => { fail!("Error unwrapping, due to previous error: {}", f) }
-    }
-}
-
-fn main(){
+pub fn main(){
 	let args: Args = FlagParser::parse().unwrap_or_else(|e| e.exit());
     
     let flag_n : Option<uint> = args.flag_n;
 
     let subsetn : uint = flag_n.unwrap_or(4u);
     
-    let pathstr = args.arg_DICTFILE.map(|s| {s}).unwrap_or("/usr/share/dict/words".to_string());
+    let pathstr = args.arg_dictfile.map(|s| {s}).unwrap_or("/usr/share/dict/words".to_string());
     
     let path = Path::new(pathstr);
     //~ let path = Path::new("fakewords-test.txt");
     let mut file = BufferedReader::new(File::open(&path));
     
-    let lines_opt: IoResult<Vec<String> > = std::result::collect(
-        file.lines().map(|orl| {
-            orl.map(|l| {l.as_slice().trim_chars(&[' ', '\t', '\r', '\n']).to_string()})
-            })
-        );
-    let lines = or_fail(lines_opt);
+    let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
+    
+    let lines: Vec<String> = file.lines().map(|orl| {
+		orl.unwrap().as_slice().trim_chars(trimchars).to_string()
+	}).collect();
     let mut wb = WordBuilder::new(lines, subsetn);
     
     println!("Now have a map of length {}", wb.subs.len());

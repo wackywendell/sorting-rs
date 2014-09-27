@@ -6,12 +6,16 @@
 #[warn(missing_doc)]
 
 use std::collections::HashMap;
+use std::collections::hashmap::{Occupied, Vacant};
 
 /// Count the number of occurrences of each value in an iterator
 pub fn counter<K : std::hash::Hash + Eq, I : Iterator<K>>(mut list : I) -> HashMap<K, uint> {
 	let mut counter : HashMap<K, uint> = HashMap::new();
 	for key in list {
-		counter.insert_or_update_with(key, 1, |_, v| {*v += 1});
+		match counter.entry(key) {
+			Vacant(entry) => {entry.set(1);},
+			Occupied(entry) => {(*entry.into_mut()) += 1;}
+		}
 	}
 	counter
 }
@@ -19,11 +23,11 @@ pub fn counter<K : std::hash::Hash + Eq, I : Iterator<K>>(mut list : I) -> HashM
 #[test]
 fn test_counter() {
 	let my_list : Vec<&str> = vec!();
-	let count : HashMap<&str, uint> = counter(my_list.move_iter());
+	let count : HashMap<&str, uint> = counter(my_list.into_iter());
 	assert_eq!(count.find(&"a"), None);
 	
 	let my_list = vec!("a", "b", "cd", "a", "a", "b");
-	let count : HashMap<&str, uint> = counter(my_list.move_iter());
+	let count : HashMap<&str, uint> = counter(my_list.into_iter());
 	
 	assert_eq!(count.find(&"a"), Some(&3u));
 	assert_eq!(count.find(&"b"), Some(&2u));
