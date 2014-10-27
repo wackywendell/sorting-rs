@@ -205,14 +205,27 @@ pub fn main(){
     
     let pathstr = args.arg_dictfile.map(|s| {s}).unwrap_or("/usr/share/dict/words".to_string());
     
-    let path = Path::new(pathstr);
-    //~ let path = Path::new("fakewords-test.txt");
-    let mut file = BufferedReader::new(File::open(&path));
+    let path = Path::new(pathstr.clone());
+    let file = match File::open(&path) {
+		Ok(f) => f,
+		Err(std::io::IoError{kind: std::io::FileNotFound, desc: _, detail: _}) => {
+			let _ = writeln!(std::io::stderr(), "File not found: {}", pathstr);
+			std::os::set_exit_status(-1);
+			return;
+		}
+		Err(e) => fail!("failed to open file: {}", e)
+	};
+    
+    let mut file = BufferedReader::new(file);
     
     let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
     
     let lines: Vec<String> = file.lines().map(|orl| {
-		orl.unwrap().as_slice().trim_chars(trimchars).to_string()
+		let unwrapl = match orl {
+			Ok(l) => l,
+			Err(e) => fail!("Failed reading file: {}", e)
+		};
+		unwrapl.as_slice().trim_chars(trimchars).to_string()
 	}).collect();
     let mut wb = WordBuilder::new(lines, subsetn);
     
@@ -220,5 +233,5 @@ pub fn main(){
     
     for w in wb.iter(){
         println!("{}",w);
-    }
+    };
 }
