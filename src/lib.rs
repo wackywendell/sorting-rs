@@ -8,7 +8,7 @@
 use std::collections::HashMap;
 use std::collections::hashmap::{Occupied, Vacant};
 
-pub use sorting::quicksort;
+pub use sorting::{quicksort,heapsort};
 
 pub mod sorting;
 
@@ -29,10 +29,10 @@ fn test_counter() {
 	let my_list : Vec<&str> = vec!();
 	let count : HashMap<&str, uint> = counter(my_list.into_iter());
 	assert_eq!(count.find(&"a"), None);
-	
+
 	let my_list = vec!("a", "b", "cd", "a", "a", "b");
 	let count : HashMap<&str, uint> = counter(my_list.into_iter());
-	
+
 	assert_eq!(count.find(&"a"), Some(&3u));
 	assert_eq!(count.find(&"b"), Some(&2u));
 	assert_eq!(count.find(&"cd"), Some(&1u));
