@@ -8,6 +8,10 @@
 use std::collections::HashMap;
 use std::collections::hashmap::{Occupied, Vacant};
 
+pub use sorting::quicksort;
+
+pub mod sorting;
+
 /// Count the number of occurrences of each value in an iterator
 pub fn counter<K : std::hash::Hash + Eq, I : Iterator<K>>(mut list : I) -> HashMap<K, uint> {
 	let mut counter : HashMap<K, uint> = HashMap::new();
