@@ -119,7 +119,7 @@ impl WordBuilder {
                 }
             ).collect();
             if fullsum == 0 {
-                fail!("s: \"{}\"", s);
+                panic!("s: \"{}\"", s);
             }
             
             let endprob = if self.wordlens.len() > s.len() {
@@ -213,7 +213,7 @@ pub fn main(){
 			std::os::set_exit_status(-1);
 			return;
 		}
-		Err(e) => fail!("failed to open file: {}", e)
+		Err(e) => panic!("failed to open file: {}", e)
 	};
     
     let mut file = BufferedReader::new(file);
@@ -223,7 +223,7 @@ pub fn main(){
     let lines: Vec<String> = file.lines().map(|orl| {
 		let unwrapl = match orl {
 			Ok(l) => l,
-			Err(e) => fail!("Failed reading file: {}", e)
+			Err(e) => panic!("Failed reading file: {}", e)
 		};
 		unwrapl.as_slice().trim_chars(trimchars).to_string()
 	}).collect();

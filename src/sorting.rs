@@ -100,7 +100,7 @@ pub fn is_sorted<T : Ord>(slice: &[T]) -> bool {
 		match win {
 			[ref a, ref b] if a < b => continue,
 			[_, _] => return false,
-			_ => fail!("slice.windows(2) returned a window with size {} != 2", win.len())
+			_ => panic!("slice.windows(2) returned a window with size {} != 2", win.len())
 		}
 	}
 	true
@@ -250,5 +250,84 @@ fn test_heapsort(){
 		let test_slice = test_vec.as_mut_slice();
 		heapsort(test_slice);
 		assert!(is_sorted(test_slice));
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Merge Sort
+
+/// Merge two sorted arrays into a single vector
+pub fn merge<T : Ord + Clone>(slice1 : &[T], slice2 : &[T]) -> Vec<T> {
+	let mut vec = Vec::with_capacity(slice1.len() + slice2.len());
+	
+	let (mut it1, mut it2) = (slice1.iter().peekable(), slice2.iter().peekable());
+	
+	loop {
+		let push_v = match (it1.peek(), it2.peek()) {
+			(None, None) => break,
+			(Some(&v), None) => {it1.next(); v.clone()},
+			(Some(&v1), Some(&v2)) if v1 <= v2 => {it1.next(); v1.clone()},
+			(_, Some(&v)) => {it2.next(); v.clone()}
+		};
+		vec.push(push_v);
+	}
+	return vec;
+}
+
+//~ /// Merge two sorted arrays into a single vector
+//~ pub fn merge_into<T : Ord + Clone>(slice1 : &[T], slice2 : &[T], into :&mut [T]) {
+	//~ assert!(slice1.len() + slice2.len() == into.len());
+	//~ 
+	//~ let (mut it1, mut it2) = (slice1.iter().peekable(), slice2.iter().peekable());
+	//~ 
+	//~ for v in into.iter_mut() {
+		//~ let push_v = match (it1.peek(), it2.peek()) {
+			//~ (None, None) => panic!("This should never happen!"),
+			//~ (Some(&v), None) => {it1.next(); v.clone()},
+			//~ (Some(&v1), Some(&v2)) if v1 <= v2 => {it1.next(); v1.clone()},
+			//~ (_, Some(&v)) => {it2.next(); v.clone()}
+		//~ };
+		//~ *v = push_v;
+	//~ }
+//~ }
+
+pub fn mergesort<T : Ord + Clone>(slice : &[T]) -> Vec<T> {
+	match slice {
+		[] => {return vec!();},
+		[ref v] => {return vec!(v.clone());},
+		_ => {}
+	}
+	let (s1, s2) = slice.split_at(slice.len() / 2);
+	let v1 = mergesort(s1);
+	let v2 = mergesort(s2);
+	
+	merge(v1.as_slice(), v2.as_slice())
+}
+
+#[test]
+fn test_merge(){
+	let (test_slice1, test_slice2) : (&[uint], &[uint]) = ([], []);
+	assert_eq!(merge(test_slice1, test_slice2), vec!());
+	
+	let test_slice3 = [1,2,4,5];
+	assert_eq!(merge(test_slice1, test_slice3), vec!(1,2,4,5));
+	assert_eq!(merge(test_slice3, test_slice1), vec!(1,2,4,5));
+	assert_eq!(merge(test_slice3, test_slice3), vec!(1,1,2,2,4,4,5,5));
+	
+	let test_slice4 = [3];
+	assert_eq!(merge(test_slice3, test_slice4), vec!(1,2,3,4,5));
+	assert_eq!(merge(test_slice4, test_slice3), vec!(1,2,3,4,5));
+}
+
+
+
+#[test]
+fn test_mergesort(){
+	let mut test_slices = get_test_vecs();
+	
+	for test_vec in test_slices.iter_mut(){
+		let test_slice = test_vec.as_mut_slice();
+		let v = mergesort(test_slice);
+		assert!(is_sorted(v.as_slice()));
 	}
 }
