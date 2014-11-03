@@ -9,9 +9,9 @@ extern crate rustscripts;
 
 #[warn(non_camel_case_types)]
 #[warn(non_snake_case)]
-#[warn(unnecessary_qualification)]
-#[warn(non_uppercase_statics)]
-#[warn(missing_doc)]
+#[warn(unused_qualifications)]
+#[warn(non_upper_case_globals)]
+#[warn(missing_docs)]
 
 /** Creates fake words.
  *  First, it uses a predefined list of words to generate a markov chain
@@ -19,7 +19,7 @@ extern crate rustscripts;
  *  fake words.
 **/
 
-use docopt::FlagParser;
+use docopt::Docopt;
 
 use std::collections::{HashSet,HashMap};
 use std::rand;
@@ -80,8 +80,7 @@ impl WordBuilder {
             for _ in range(wlens.len(), wordlen+1){
                 wlens.push(0);
             }
-            let n = wlens.get_mut(wordlen);
-            *n += 1;
+            wlens[wordlen] += 1;
         }
         
         WordBuilder {
@@ -197,7 +196,7 @@ Options:
 ", flag_n : Option<uint>, arg_dictfile : Option<String>)
 
 pub fn main(){
-	let args: Args = FlagParser::parse().unwrap_or_else(|e| e.exit());
+	let args: Args = Args::docopt().decode().unwrap_or_else(|e| e.exit());
     
     let flag_n : Option<uint> = args.flag_n;
 
