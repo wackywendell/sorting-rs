@@ -332,3 +332,29 @@ fn test_mergesort(){
 		assert!(is_sorted(v.as_slice()));
 	}
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Bubblesort
+
+/// The bubblesort algorithm.
+pub fn bubblesort<T : Ord>(slice : &mut [T]){
+	for n in std::iter::range_step(slice.len() as int, 1i, -1i){	
+		for m in range(1, n as uint){
+			if slice[m] < slice[m-1] {slice.swap(m, m-1);}
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Bubblesort Tests
+
+#[test]
+fn test_bubblesort(){
+	let mut test_slices = get_test_vecs();
+	
+	for test_vec in test_slices.iter_mut(){
+		let test_slice = test_vec.as_mut_slice();
+		bubblesort(test_slice);
+		assert!(is_sorted(test_slice));
+	}
+}
