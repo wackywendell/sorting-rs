@@ -21,24 +21,36 @@ fn choose_pivot<T : Ord>(slice : &[T]) -> uint {
 /// everything to the right is greater
 /// Assumes slice.len() > 2
 fn partition<T : Ord>(slice : &mut [T], pivot : uint) -> uint {
-	let mut pivot = pivot;
 	let mxix = slice.len() - 1;
-	let (mut left, mut right) = (0, mxix);
-	while left + 1 < right {
-		let mut retry = false;
-		if slice[left] < slice[pivot] {left += 1; retry = true;}
-		if slice[right] > slice[pivot] {right -= 1; retry = true;}
-		if left == pivot {left += 1; retry == true;}
-		if right == pivot {right -= 1; retry == true;}
-		if retry {continue;}
-		
-		slice.swap(left, right);
+	slice.swap(pivot, mxix);
+	let (mut left, mut right) = (0, mxix-1);
+	
+	while left < right {
+		if slice[left] <= slice[mxix] {left += 1;}
+		else if slice[right] >= slice[mxix] {right -= 1;}
+		else {
+			slice.swap(left, right); 
+			left += 1;
+			right -= 1;
+		}
 	}
 	
-	if pivot < left && pivot < right && slice[left] < slice[pivot] {slice.swap(left, pivot); pivot = left;}
-	else if pivot > right && pivot > left && slice[right] > slice[pivot] {slice.swap(right, pivot); pivot = right;};
+	if left > right {
+		// We just swapped the final two.
+		slice.swap(left, mxix);
+		return left;
+	}
 	
-	return pivot;
+	// Left and right met.
+	if slice[left] > slice[mxix] {
+		slice.swap(left, mxix);
+		return left;
+	} else if slice[left] < slice[mxix] {
+		slice.swap(left+1, mxix);
+		return left+1;
+	}
+	
+	panic!("This should be unreachable.");
 }
 
 /// The quicksort algorithm, for sorting an array.
@@ -67,32 +79,33 @@ fn test_partition() {
 	let tests : &mut [uint] = [1u,2,3];
 	let result : &mut [uint] = [1,2,3];
 	let p = partition(tests, 1);
-	assert_eq!(&tests, &result);
-	assert_eq!(p, 1);
+	assert_eq!((&tests, p), (&result, 1));
+	
 	let p = partition(tests, 0);
-	assert_eq!(&tests, &result);
-	assert_eq!(p, 0);
+	assert_eq!((&tests, p), (&result, 0));
+	
 	let p = partition(tests, 2);
-	assert_eq!(&tests, &result);
-	assert_eq!(p, 2);
+	assert_eq!((&tests, p), (&result, 2));
 	
 	let tests : &mut [uint] = [1u,3,2];
 	let p = partition(tests, 1);
 	let result : &mut [uint] = [1,2,3];
-	assert_eq!(&tests, &result);
-	assert_eq!(p, 2);
+	assert_eq!((&tests, p), (&result, 2));
 	
 	let tests : &mut [uint] = [1u,3,2];
 	let p = partition(tests, 0);
 	let result : &mut [uint] = [1,3,2];
-	assert_eq!(&tests, &result);
-	assert_eq!(p, 0);
+	assert_eq!((&tests, p), (&result, 0));
 	
 	let tests : &mut [uint] = [1u,3,2];
 	let p = partition(tests, 2);
 	let result : &mut [uint] = [1,2,3];
-	assert_eq!(&tests, &result);
-	assert_eq!(p, 1);
+	assert_eq!((&tests, p), (&result, 1));
+	
+	let tests : &mut [uint] = [1u,4,5,3,2];
+	let p = partition(tests, 2);
+	let result : &mut [uint] = [1,4,2,3,5];
+	assert_eq!((&tests, p), (&result, 4));
 }
 
 /// Test if a slice is in a sorted state.
@@ -111,7 +124,8 @@ pub fn is_sorted<T : Ord>(slice: &[T]) -> bool {
 fn get_test_vecs() -> Vec<Vec<uint>> {
 	vec!(
 		vec!(), vec!(1), vec!(1,2), vec!(2,1), vec!(1,2,3), vec!(2,1,3), vec!(3,1,2), 
-		vec!(8,5,2,6,9,3), vec!(2,3,5,6,8,9), vec!(9,8,6,5,3,2)
+		vec!(8,5,2,6,9,3), vec!(2,3,5,6,8,9), vec!(9,8,6,5,3,2), vec!(8,4,7,3,6,2,5,1),
+		vec!(8,1,7,2,6,3,5,4), vec!(8,1,7,2,6,3,5,4)
 	)
 }
 
@@ -121,7 +135,9 @@ fn test_quicksort(){
 	
 	for test_vec in test_slices.iter_mut(){
 		let test_slice = test_vec.as_mut_slice();
+		println!("Unsorted: {}", test_slice);
 		quicksort(test_slice);
+		println!("Sorted:   {}", test_slice);
 		assert!(is_sorted(test_slice));
 	}
 }
