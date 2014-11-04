@@ -1,3 +1,5 @@
+#![feature(slicing_syntax)]
+
 /// Basic sorting algorithms, just for fun.
 
 #[warn(non_camel_case_types)]
@@ -346,6 +348,38 @@ fn test_mergesort(){
 		let test_slice = test_vec.as_mut_slice();
 		let v = mergesort(test_slice);
 		assert!(is_sorted(v.as_slice()));
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Selection sort
+
+/// The selection sort algorithm.
+pub fn selsort<T : Ord>(slice : &mut [T]){
+	if slice.len() < 2 {return}
+
+	let mut min = 0;
+	for i in range(1, slice.len()){
+		if slice[i] < slice[min] {
+			min = i;
+		}
+	}
+	slice.swap(0, min);
+
+	selsort(slice[mut 1..]);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Selection sort Tests
+
+#[test]
+fn test_selectionsort(){
+	let mut test_slices = get_test_vecs();
+	
+	for test_vec in test_slices.iter_mut(){
+		let test_slice = test_vec[mut];
+		selsort(test_slice);
+		assert!(is_sorted(test_slice));
 	}
 }
 
