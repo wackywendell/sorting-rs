@@ -6,10 +6,12 @@
 #[warn(non_upper_case_globals)]
 #[warn(missing_docs)]
 
+extern crate test;
+
 use std::collections::HashMap;
 use std::collections::hash_map::{Occupied, Vacant};
 
-pub use sorting::{quicksort,heapsort};
+pub use sorting::{Sorted,Sortable};
 
 pub mod sorting;
 
