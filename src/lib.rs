@@ -1,4 +1,33 @@
-//! Basic sorting algorithms, just for fun.
+/*! Basic sorting algorithms, just for fun.
+
+Note that the exported `Sortable` and `Sorted` traits provide all necessary functionality. 
+`Sortable` provides functions for in-place sorting, and `Sorted` provides copy-sorting.
+
+Some benchmarks, all performed on a `Vec` of 2000 random `uint`s:
+
+```ignore
+test benchmarks::bench_bubblesort ... bench:   1197517 ns/iter (+/- 154803)
+test benchmarks::bench_heapsort   ... bench:     54756 ns/iter (+/- 1863)
+test benchmarks::bench_mergesort  ... bench:    132263 ns/iter (+/- 15198)
+test benchmarks::bench_quicksort  ... bench:     44623 ns/iter (+/- 9263)
+test benchmarks::bench_selsort    ... bench:    699363 ns/iter (+/- 36305)
+test benchmarks::bench_shellsort  ... bench:     59090 ns/iter (+/- 3630)
+test benchmarks::bench_slice_sort ... bench:     66509 ns/iter (+/- 3064)
+```
+
+`bubblesort` is by far the slowest, followed by `selsort`; both unsurprisingly slow.
+
+Interestingly, `quicksort`, `heapsort`, and possibly `shellsort` outperform 
+`std::slice::MutableOrdSlice::sort()`, at least on this benchmark; the `std` one is, as I understand
+it, an optimized mergesort, and is probably faster on more general benchmarks. Here are some things
+this benchmark doesn't cover:
+
+  * Comparing with a `compare` function instead of comparision by-value
+  * Sorting a partially-sorted list
+  * Sorting something with expensive copy operations
+  * Sorting a reverse-sorted list
+
+*/
 
 #[warn(non_camel_case_types)]
 #[warn(non_snake_case)]
@@ -354,7 +383,6 @@ mod tests {
 		true
 	}
 
-	#[cfg(test)]
 	fn get_test_vecs() -> Vec<Vec<uint>> {
 		vec!(
 			vec!(), vec!(1), vec!(1,2), vec!(2,1), vec!(1,2,3), vec!(2,1,3), vec!(3,1,2), 
@@ -536,11 +564,12 @@ pub mod benchmarks {
 	
 	fn get_bench_vec() -> Vec<uint> {
 		let mut rng = ::std::rand::task_rng();
-		Vec::from_fn(1000, |_| {rng.gen()})
+		Vec::from_fn(2000, |_| {rng.gen()})
 	}
 
+	/// Benchmark of the standard library sort function
 	#[bench]
-	fn bench_sort(b : &mut Bencher) {
+	fn bench_slice_sort(b : &mut Bencher) {
 		let test_vec = get_bench_vec();
 		
 		b.iter(|| {
@@ -549,7 +578,6 @@ pub mod benchmarks {
 		});
 	}
 
-	#[cfg(test)]
 	#[bench]
 	fn bench_quicksort(b : &mut Bencher) {
 		let test_vec = get_bench_vec();
@@ -560,7 +588,6 @@ pub mod benchmarks {
 		});
 	}
 
-	#[cfg(test)]
 	#[bench]
 	fn bench_heapsort(b : &mut Bencher) {
 		let test_vec = get_bench_vec();
@@ -571,7 +598,6 @@ pub mod benchmarks {
 		});
 	}
 
-	#[cfg(test)]
 	#[bench]
 	fn bench_selsort(b : &mut Bencher) {
 		let test_vec = get_bench_vec();
@@ -582,7 +608,6 @@ pub mod benchmarks {
 		});
 	}
 
-	#[cfg(test)]
 	#[bench]
 	fn bench_shellsort(b : &mut Bencher) {
 		let test_vec = get_bench_vec();
@@ -593,8 +618,6 @@ pub mod benchmarks {
 		});
 	}
 
-
-	#[cfg(test)]
 	#[bench]
 	fn bench_mergesort(b : &mut Bencher) {
 		let test_vec = get_bench_vec();
@@ -604,8 +627,7 @@ pub mod benchmarks {
 			v.mergesorted()
 		});
 	}
-
-	#[cfg(test)]
+	
 	#[bench]
 	fn bench_bubblesort(b : &mut Bencher) {
 		let test_vec = get_bench_vec();

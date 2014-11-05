@@ -1,5 +1,5 @@
 [package]
 
-name = "sorting-rs"
+name = "sorting"
 version = "0.1.0"
 authors = [ "wackywendell@gmail.com" ]
