@@ -12,4 +12,9 @@ Currently written:
  * Shell Sort
  * Merge Sort
 
-They are meant to be written simply, and therefore in an easy-to-read format. Enjoy!
+They are meant to be written simply, and therefore in an easy-to-read format.
+
+See `src/algorithms.rs` for code. There are also tests in `src/tests.rs` and benchmarks in
+`src/benchmarks.rs`.
+
+Enjoy!
