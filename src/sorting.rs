@@ -1,5 +1,3 @@
-#![feature(slicing_syntax)]
-
 /// Basic sorting algorithms, just for fun.
 
 #[warn(non_camel_case_types)]
@@ -366,7 +364,7 @@ pub fn selsort<T : Ord>(slice : &mut [T]){
 	}
 	slice.swap(0, min);
 
-	selsort(slice[mut 1..]);
+	selsort(slice.slice_from_mut(1));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -377,7 +375,7 @@ fn test_selectionsort(){
 	let mut test_slices = get_test_vecs();
 	
 	for test_vec in test_slices.iter_mut(){
-		let test_slice = test_vec[mut];
+		let test_slice = test_vec.as_mut_slice();
 		selsort(test_slice);
 		assert!(is_sorted(test_slice));
 	}
