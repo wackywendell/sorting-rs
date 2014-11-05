@@ -38,9 +38,6 @@ this benchmark doesn't cover:
 pub mod algorithms;
 
 #[cfg(test)]
-mod tests;
-
-#[cfg(test)]
 mod benchmarks;
 
 // Public traits, for export
