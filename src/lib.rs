@@ -7,7 +7,8 @@
 #[warn(missing_docs)]
 
 #[cfg(test)]
-use std;
+extern crate test;
+
 #[cfg(test)]
 use test::Bencher;
 #[cfg(test)]
