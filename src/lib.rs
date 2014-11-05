@@ -6,15 +6,7 @@
 #[warn(non_upper_case_globals)]
 #[warn(missing_docs)]
 
-#[cfg(test)]
-extern crate test;
-
-#[cfg(test)]
-use test::Bencher;
-#[cfg(test)]
-use std::rand::Rng;
-
-
+/// Algorithms that back up the Sortable and Sorted traits
 pub mod algorithms {
 	use std;
 	fn choose_pivot<T : Ord>(slice : &[T]) -> uint {
@@ -29,7 +21,7 @@ pub mod algorithms {
 	/// choose a pivot, then reorder so that everything to the left of the pivot is smaller, and 
 	/// everything to the right is greater
 	/// Assumes slice.len() > 2
-	fn partition<T : Ord>(slice : &mut [T], pivot : uint) -> uint {
+	pub fn partition<T : Ord>(slice : &mut [T], pivot : uint) -> uint {
 		let mxix = slice.len() - 1;
 		slice.swap(pivot, mxix);
 		let (mut left, mut right) = (0, mxix-1);
@@ -80,8 +72,241 @@ pub mod algorithms {
 		quicksort(left_slice);
 		quicksort(right_slice);
 	}
+	
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+	// Heapsort
+
+	/// Index of parent node
+	#[inline]
+	pub fn get_parent(ix : uint) -> uint {
+		(ix+1) / 2 - 1
+	}
+
+	/// Index of leaf nodes
+	#[inline]
+	pub fn get_leaves(ix : uint) -> (uint, uint) {
+		(ix*2 + 1, ix*2+2)
+	}
+
+	/// Turn the array into a maximal heap
+	pub fn heapify<T : Ord>(slice : &mut [T]){
+		for ix in range(1, slice.len()){
+			let mut curix = ix;
+			while curix > 0 {
+				let pix = get_parent(curix);
+				if slice[pix] > slice[curix] {break;}
+				
+				slice.swap(pix, curix);
+				curix = pix;
+			}
+		}
+	}
+
+	/// Assuming our slice is a heap, take the maximal element (element 0), swap it to the end,
+	/// take that end-element / now root and filter it down the heap until its in the right place.
+	/// At the end of this function, the max element is at the end, and elements 0 to (end-1) are a heap
+	/// again.
+	fn heap_pop<T : Ord>(slice : &mut [T]){
+		if slice.len() <= 1 {return;}
+		let mxix = slice.len() - 2; // last index in the new heap
+		slice.swap(0, mxix+1);
+		
+		// Now we filter downwards.
+		let mut curix = 0;
+		loop {
+			let (l,r) = get_leaves(curix);
+			if l > mxix {
+				// we reached the bottom, there are no more leaves.
+				break;
+			}
+			let switch_ix = if (r > mxix) || (slice[l] > slice[r]) {l} else {r};
+			if slice[curix] >= slice[switch_ix] {break;}
+			slice.swap(curix, switch_ix);
+			curix = switch_ix;
+		}
+	}
+
+	/// Turn a heap-array into a sorted array
+	pub fn heap_to_sorted<T : Ord>(slice : &mut [T]){
+		//~ let mut portion = slice;
+		//~ while portion.len() > 1 {
+			//~ heap_pop(portion);
+			//~ portion = portion.init_mut();
+		//~ }
+		
+		let ln = slice.len();
+		if ln <= 1 {return;}
+		for i in range(0, ln - 1){
+			let portion = slice.slice_to_mut(ln - i);
+			heap_pop(portion);
+		}
+	}
+
+	/// The heapsort algorithm.
+	/// This turns the array into an in-place binary max heap, then uses that to sort the list.
+	pub fn heapsort<T : Ord>(slice : &mut [T]){
+		heapify(slice);
+		heap_to_sorted(slice);
+	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Merge Sort
+
+	/// Merge two sorted arrays into a single vector
+	pub fn merge<T : Ord + Clone>(slice1 : &[T], slice2 : &[T]) -> Vec<T> {
+		let mut vec = Vec::with_capacity(slice1.len() + slice2.len());
+		
+		let (mut it1, mut it2) = (slice1.iter().peekable(), slice2.iter().peekable());
+		
+		loop {
+			let push_v = match (it1.peek(), it2.peek()) {
+				(None, None) => break,
+				(Some(&v), None) => {it1.next(); v.clone()},
+				(Some(&v1), Some(&v2)) if v1 <= v2 => {it1.next(); v1.clone()},
+				(_, Some(&v)) => {it2.next(); v.clone()}
+			};
+			vec.push(push_v);
+		}
+		return vec;
+	}
+	
+	/// Basic mergesort. NOT in-place
+	pub fn mergesort<T : Ord + Clone>(slice : &[T]) -> Vec<T> {
+		match slice {
+			[] => {return vec!();},
+			[ref v] => {return vec!(v.clone());},
+			_ => {}
+		}
+		let (s1, s2) = slice.split_at(slice.len() / 2);
+		let v1 = mergesort(s1);
+		let v2 = mergesort(s2);
+		
+		merge(v1.as_slice(), v2.as_slice())
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Selection sort
+
+	/// The selection sort algorithm.
+	pub fn selsort<T : Ord>(slice : &mut [T]){
+		if slice.len() < 2 {return}
+
+		let mut min = 0;
+		for i in range(1, slice.len()){
+			if slice[i] < slice[min] {
+				min = i;
+			}
+		}
+		slice.swap(0, min);
+
+		selsort(slice.slice_from_mut(1));
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// Bubblesort
+
+	/// The bubblesort algorithm.
+	pub fn bubblesort<T : Ord>(slice : &mut [T]){
+		for n in std::iter::range_step(slice.len() as int, 1i, -1i){	
+			for m in range(1, n as uint){
+				if slice[m] < slice[m-1] {slice.swap(m, m-1);}
+			}
+		}
+	}
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// Shell sort
+
+	/// The values to go by for a shell-sort. Note that the sequence determines the complexity.
+	pub trait ShellHs : Iterator<uint>{
+		/// Create a new ShellHs, for a vector of length n
+		fn new(n: uint) -> Self;
+	}
+
+	/// Knuth's values: 1,4,13,40,121... up to n/3
+	pub struct ShellKnuth {
+		h : uint
+	}
+
+	impl Iterator<uint> for ShellKnuth {
+		fn next(&mut self) -> Option<uint>{
+			self.h /= 3;
+			match self.h {
+				0 => None,
+				value => Some(value)
+			}
+		}
+	}
+
+	impl ShellHs for ShellKnuth {
+		fn new(n: uint) -> ShellKnuth {
+			let mut h = 4;
+			while h*3 <= n {
+				h = 3*h + 1;
+			}
+			
+			ShellKnuth{h: h}
+		}
+	}
+
+	fn insertion_sort_partial<T : Ord>(slice : &mut [T], start: uint, step: uint){
+		for i in std::iter::range_step(start+step, slice.len(), step) {
+			let mut curloc = i;
+			while (curloc >= step) && slice[curloc] < slice[curloc-step] {
+				slice.swap(curloc, curloc-step);
+				curloc -= step;
+			}
+		}
+	}
+	
+	/// Shell sort
+	pub fn shellsort<H : ShellHs, T : Ord>(slice : &mut [T]){
+		let mut hs : H = ShellHs::new(slice.len());
+		for h in hs {
+			for k in range(0,h) {
+				// our sublist is now [k, h+k, 2h+k,...]
+				// We insertion sort it
+				insertion_sort_partial(slice, k, h);
+			}
+		}
+	}
+}
+
+// Public traits, for export
+
+pub trait Sortable<T : Ord> for Sized? : MutableSlice<T> {
+	/// Quicksort, in-place
+	fn quicksort(&mut self){algorithms::quicksort(self.as_mut_slice())}
+	/// heapsort, in-place
+	fn heapsort(&mut self){algorithms::heapsort(self.as_mut_slice())}
+	/// bubblesort, in-place
+	fn bubblesort(&mut self){algorithms::bubblesort(self.as_mut_slice())}
+	/// selection sort, in-place
+	fn selsort(&mut self) {algorithms::selsort(self.as_mut_slice())}
+	/// shell sort, in-place
+	fn shellsort(&mut self) {algorithms::shellsort(self.as_mut_slice())}
+}
+
+pub trait Sorted<T : Ord + Clone> for Sized? : ImmutableSlice<T> {
+	/// merge sort, returning a sorted version
+	fn mergesorted(&self) -> Vec<T> {algorithms::mergesort(self.slice_from(0))}
+}
+
+
+impl<T: Ord> Sortable<T> for [T]{}
+
+impl<T: Ord + Clone> Sorted<T> for [T]{}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Tests
+
+#[cfg(test)]
+mod tests {
+	use algorithms::{partition,merge,get_parent,get_leaves,heapify,ShellHs,ShellKnuth};
+	use algorithms::{quicksort,heapsort,selsort,bubblesort,mergesort,shellsort};
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
 	// Quicksort tests
 	#[test]
 	fn test_partition() {
@@ -161,83 +386,40 @@ pub mod algorithms {
 		}
 	}
 
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// Mergesort Tests
 
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Heapsort
-
-	/// Index of parent node
-	#[inline]
-	fn get_parent(ix : uint) -> uint {
-		(ix+1) / 2 - 1
-	}
-
-	/// Index of leaf nodes
-	#[inline]
-	fn get_leaves(ix : uint) -> (uint, uint) {
-		(ix*2 + 1, ix*2+2)
-	}
-
-	/// Turn the array into a maximal heap
-	pub fn heapify<T : Ord>(slice : &mut [T]){
-		for ix in range(1, slice.len()){
-			let mut curix = ix;
-			while curix > 0 {
-				let pix = get_parent(curix);
-				if slice[pix] > slice[curix] {break;}
-				
-				slice.swap(pix, curix);
-				curix = pix;
-			}
-		}
-	}
-
-	/// Assuming our slice is a heap, take the maximal element (element 0), swap it to the end,
-	/// take that end-element / now root and filter it down the heap until its in the right place.
-	/// At the end of this function, the max element is at the end, and elements 0 to (end-1) are a heap
-	/// again.
-	fn heap_pop<T : Ord>(slice : &mut [T]){
-		if slice.len() <= 1 {return;}
-		let mxix = slice.len() - 2; // last index in the new heap
-		slice.swap(0, mxix+1);
+	#[test]
+	fn test_merge(){
+		let (test_slice1, test_slice2) : (&[uint], &[uint]) = ([], []);
+		assert_eq!(merge(test_slice1, test_slice2), vec!());
 		
-		// Now we filter downwards.
-		let mut curix = 0;
-		loop {
-			let (l,r) = get_leaves(curix);
-			if l > mxix {
-				// we reached the bottom, there are no more leaves.
-				break;
-			}
-			let switch_ix = if (r > mxix) || (slice[l] > slice[r]) {l} else {r};
-			if slice[curix] >= slice[switch_ix] {break;}
-			slice.swap(curix, switch_ix);
-			curix = switch_ix;
-		}
-	}
-
-	/// Turn a heap-array into a sorted array
-	pub fn heap_to_sorted<T : Ord>(slice : &mut [T]){
-		//~ let mut portion = slice;
-		//~ while portion.len() > 1 {
-			//~ heap_pop(portion);
-			//~ portion = portion.init_mut();
-		//~ }
+		let test_slice3 = [1,2,4,5];
+		assert_eq!(merge(test_slice1, test_slice3), vec!(1,2,4,5));
+		assert_eq!(merge(test_slice3, test_slice1), vec!(1,2,4,5));
+		assert_eq!(merge(test_slice3, test_slice3), vec!(1,1,2,2,4,4,5,5));
 		
-		let ln = slice.len();
-		if ln <= 1 {return;}
-		for i in range(0, ln - 1){
-			let portion = slice.slice_to_mut(ln - i);
-			heap_pop(portion);
-		}
+		let test_slice4 = [3];
+		assert_eq!(merge(test_slice3, test_slice4), vec!(1,2,3,4,5));
+		assert_eq!(merge(test_slice4, test_slice3), vec!(1,2,3,4,5));
 	}
 
-	/// The heapsort algorithm.
-	/// This turns the array into an in-place binary max heap, then uses that to sort the list.
-	pub fn heapsort<T : Ord>(slice : &mut [T]){
-		heapify(slice);
-		heap_to_sorted(slice);
+
+
+	#[test]
+	fn test_mergesort(){
+		let mut test_slices = get_test_vecs();
+		
+		for test_vec in test_slices.iter_mut(){
+			let test_slice = test_vec.as_mut_slice();
+			let v = mergesort(test_slice);
+			assert!(is_sorted(v.as_slice()));
+		}
 	}
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// Heapsort Tests
 
 	#[test]
 	fn test_indexing(){
@@ -256,7 +438,6 @@ pub mod algorithms {
 		}
 	}
 
-	#[cfg(test)]
 	fn is_max_heap<T : Ord>(slice : &[T]) -> bool{
 		for i in range(1, slice.len()){
 			let p = get_parent(i);
@@ -288,105 +469,8 @@ pub mod algorithms {
 			assert!(is_sorted(test_slice));
 		}
 	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Merge Sort
-
-	/// Merge two sorted arrays into a single vector
-	pub fn merge<T : Ord + Clone>(slice1 : &[T], slice2 : &[T]) -> Vec<T> {
-		let mut vec = Vec::with_capacity(slice1.len() + slice2.len());
-		
-		let (mut it1, mut it2) = (slice1.iter().peekable(), slice2.iter().peekable());
-		
-		loop {
-			let push_v = match (it1.peek(), it2.peek()) {
-				(None, None) => break,
-				(Some(&v), None) => {it1.next(); v.clone()},
-				(Some(&v1), Some(&v2)) if v1 <= v2 => {it1.next(); v1.clone()},
-				(_, Some(&v)) => {it2.next(); v.clone()}
-			};
-			vec.push(push_v);
-		}
-		return vec;
-	}
-
-	//~ /// Merge two sorted arrays into a single vector
-	//~ pub fn merge_into<T : Ord + Clone>(slice1 : &[T], slice2 : &[T], into :&mut [T]) {
-		//~ assert!(slice1.len() + slice2.len() == into.len());
-		//~ 
-		//~ let (mut it1, mut it2) = (slice1.iter().peekable(), slice2.iter().peekable());
-		//~ 
-		//~ for v in into.iter_mut() {
-			//~ let push_v = match (it1.peek(), it2.peek()) {
-				//~ (None, None) => panic!("This should never happen!"),
-				//~ (Some(&v), None) => {it1.next(); v.clone()},
-				//~ (Some(&v1), Some(&v2)) if v1 <= v2 => {it1.next(); v1.clone()},
-				//~ (_, Some(&v)) => {it2.next(); v.clone()}
-			//~ };
-			//~ *v = push_v;
-		//~ }
-	//~ }
-
-	pub fn mergesort<T : Ord + Clone>(slice : &[T]) -> Vec<T> {
-		match slice {
-			[] => {return vec!();},
-			[ref v] => {return vec!(v.clone());},
-			_ => {}
-		}
-		let (s1, s2) = slice.split_at(slice.len() / 2);
-		let v1 = mergesort(s1);
-		let v2 = mergesort(s2);
-		
-		merge(v1.as_slice(), v2.as_slice())
-	}
-
-	#[test]
-	fn test_merge(){
-		let (test_slice1, test_slice2) : (&[uint], &[uint]) = ([], []);
-		assert_eq!(merge(test_slice1, test_slice2), vec!());
-		
-		let test_slice3 = [1,2,4,5];
-		assert_eq!(merge(test_slice1, test_slice3), vec!(1,2,4,5));
-		assert_eq!(merge(test_slice3, test_slice1), vec!(1,2,4,5));
-		assert_eq!(merge(test_slice3, test_slice3), vec!(1,1,2,2,4,4,5,5));
-		
-		let test_slice4 = [3];
-		assert_eq!(merge(test_slice3, test_slice4), vec!(1,2,3,4,5));
-		assert_eq!(merge(test_slice4, test_slice3), vec!(1,2,3,4,5));
-	}
-
-
-
-	#[test]
-	fn test_mergesort(){
-		let mut test_slices = get_test_vecs();
-		
-		for test_vec in test_slices.iter_mut(){
-			let test_slice = test_vec.as_mut_slice();
-			let v = mergesort(test_slice);
-			assert!(is_sorted(v.as_slice()));
-		}
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Selection sort
-
-	/// The selection sort algorithm.
-	pub fn selsort<T : Ord>(slice : &mut [T]){
-		if slice.len() < 2 {return}
-
-		let mut min = 0;
-		for i in range(1, slice.len()){
-			if slice[i] < slice[min] {
-				min = i;
-			}
-		}
-		slice.swap(0, min);
-
-		selsort(slice.slice_from_mut(1));
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
 	// Selection sort Tests
 
 	#[test]
@@ -399,20 +483,8 @@ pub mod algorithms {
 			assert!(is_sorted(test_slice));
 		}
 	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Bubblesort
-
-	/// The bubblesort algorithm.
-	pub fn bubblesort<T : Ord>(slice : &mut [T]){
-		for n in std::iter::range_step(slice.len() as int, 1i, -1i){	
-			for m in range(1, n as uint){
-				if slice[m] < slice[m-1] {slice.swap(m, m-1);}
-			}
-		}
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
 	// Bubblesort Tests
 
 	#[test]
@@ -426,40 +498,8 @@ pub mod algorithms {
 		}
 	}
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Shell sort
-
-	/// The values to go by for a shell-sort. Note that the sequence determines the complexity.
-	pub trait ShellHs : Iterator<uint>{
-		fn new(n: uint) -> Self;
-	}
-
-	/// Knuth's values: 1,4,13,40,121... up to n/3
-	pub struct ShellKnuth {
-		h : uint
-	}
-
-	impl Iterator<uint> for ShellKnuth {
-		fn next(&mut self) -> Option<uint>{
-			self.h /= 3;
-			match self.h {
-				0 => None,
-				value => Some(value)
-			}
-		}
-	}
-
-	impl ShellHs for ShellKnuth {
-		fn new(n: uint) -> ShellKnuth {
-			let mut h = 4;
-			while h*3 <= n {
-				h = 3*h + 1;
-			}
-			
-			ShellKnuth{h: h}
-		}
-	}
-
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// Shellsort Tests
 	#[test]
 	fn test_shell_hs_knuth() {
 		let hs : Vec<uint> = ShellHs::new(363).collect();
@@ -469,31 +509,7 @@ pub mod algorithms {
 		let hs : Vec<uint> = ShellHs::new(2).collect();
 		assert_eq!(hs, vec!(1));
 	}
-
-	fn insertion_sort_partial<T : Ord>(slice : &mut [T], start: uint, step: uint){
-		for i in std::iter::range_step(start+step, slice.len(), step) {
-			let mut curloc = i;
-			while (curloc >= step) && slice[curloc] < slice[curloc-step] {
-				slice.swap(curloc, curloc-step);
-				curloc -= step;
-			}
-		}
-	}
-
-	pub fn shellsort<H : ShellHs, T : Ord>(slice : &mut [T]){
-		let mut hs : H = ShellHs::new(slice.len());
-		for h in hs {
-			for k in range(0,h) {
-				// our sublist is now [k, h+k, 2h+k,...]
-				// We insertion sort it
-				insertion_sort_partial(slice, k, h);
-			}
-		}
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Shellsort Tests
-
+	
 	#[test]
 	fn test_shellsort(){
 		let mut test_slices = get_test_vecs();
@@ -506,116 +522,97 @@ pub mod algorithms {
 	}
 }
 
-// Public traits, for export
-
-pub trait Sortable<T : Ord> for Sized? : MutableSlice<T> {
-	/// Quicksort, in-place
-	fn quicksort(&mut self){algorithms::quicksort(self.as_mut_slice())}
-	/// heapsort, in-place
-	fn heapsort(&mut self){algorithms::heapsort(self.as_mut_slice())}
-	/// bubblesort, in-place
-	fn bubblesort(&mut self){algorithms::bubblesort(self.as_mut_slice())}
-	/// selection sort, in-place
-	fn selsort(&mut self) {algorithms::selsort(self.as_mut_slice())}
-	/// shell sort, in-place
-	fn shellsort(&mut self) {algorithms::shellsort(self.as_mut_slice())}
-}
-
-pub trait Sorted<T : Ord + Clone> for Sized? : ImmutableSlice<T> {
-	/// merge sort, returning a sorted version
-	fn mergesorted(&self) -> Vec<T> {algorithms::mergesort(self.slice_from(0))}
-}
-
-
-impl<T: Ord> Sortable<T> for [T]{}
-
-impl<T: Ord + Clone> Sorted<T> for [T]{}
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Benchmarks
 
 #[cfg(test)]
-fn get_bench_vec() -> Vec<uint> {
-	let mut rng = std::rand::task_rng();
-	Vec::from_fn(1000, |_| {rng.gen()})
-}
+pub mod benchmarks {	
+	extern crate test;
 
-#[cfg(test)]
-#[bench]
-fn bench_sort(b : &mut Bencher) {
-	let test_vec = get_bench_vec();
+	use self::test::Bencher;
+	use std::rand::Rng;
 	
-	b.iter(|| {
-		let mut v : Vec<uint> = test_vec.clone();
-		v.as_mut_slice().sort();
-	});
-}
-
-#[cfg(test)]
-#[bench]
-fn bench_quicksort(b : &mut Bencher) {
-	let test_vec = get_bench_vec();
+	use {Sorted,Sortable};
 	
-	b.iter(|| {
-		let mut v : Vec<uint> = test_vec.clone();
-		v.quicksort();
-	});
+	fn get_bench_vec() -> Vec<uint> {
+		let mut rng = ::std::rand::task_rng();
+		Vec::from_fn(1000, |_| {rng.gen()})
+	}
+
+	#[bench]
+	fn bench_sort(b : &mut Bencher) {
+		let test_vec = get_bench_vec();
+		
+		b.iter(|| {
+			let mut v : Vec<uint> = test_vec.clone();
+			v.as_mut_slice().sort();
+		});
+	}
+
+	#[cfg(test)]
+	#[bench]
+	fn bench_quicksort(b : &mut Bencher) {
+		let test_vec = get_bench_vec();
+		
+		b.iter(|| {
+			let mut v : Vec<uint> = test_vec.clone();
+			v.quicksort();
+		});
+	}
+
+	#[cfg(test)]
+	#[bench]
+	fn bench_heapsort(b : &mut Bencher) {
+		let test_vec = get_bench_vec();
+		
+		b.iter(|| {
+			let mut v : Vec<uint> = test_vec.clone();
+			v.heapsort();
+		});
+	}
+
+	#[cfg(test)]
+	#[bench]
+	fn bench_selsort(b : &mut Bencher) {
+		let test_vec = get_bench_vec();
+		
+		b.iter(|| {
+			let mut v : Vec<uint> = test_vec.clone();
+			v.selsort();
+		});
+	}
+
+	#[cfg(test)]
+	#[bench]
+	fn bench_shellsort(b : &mut Bencher) {
+		let test_vec = get_bench_vec();
+		
+		b.iter(|| {
+			let mut v : Vec<uint> = test_vec.clone();
+			v.shellsort();
+		});
+	}
+
+
+	#[cfg(test)]
+	#[bench]
+	fn bench_mergesort(b : &mut Bencher) {
+		let test_vec = get_bench_vec();
+		
+		b.iter(|| {
+			let v : Vec<uint> = test_vec.clone();
+			v.mergesorted()
+		});
+	}
+
+	#[cfg(test)]
+	#[bench]
+	fn bench_bubblesort(b : &mut Bencher) {
+		let test_vec = get_bench_vec();
+		
+		b.iter(|| {
+			let mut v : Vec<uint> = test_vec.clone();
+			v.bubblesort()
+		});
+	}
 }
-
-#[cfg(test)]
-#[bench]
-fn bench_heapsort(b : &mut Bencher) {
-	let test_vec = get_bench_vec();
-	
-	b.iter(|| {
-		let mut v : Vec<uint> = test_vec.clone();
-		v.heapsort();
-	});
-}
-
-#[cfg(test)]
-#[bench]
-fn bench_selsort(b : &mut Bencher) {
-	let test_vec = get_bench_vec();
-	
-	b.iter(|| {
-		let mut v : Vec<uint> = test_vec.clone();
-		v.selsort();
-	});
-}
-
-#[cfg(test)]
-#[bench]
-fn bench_shellsort(b : &mut Bencher) {
-	let test_vec = get_bench_vec();
-	
-	b.iter(|| {
-		let mut v : Vec<uint> = test_vec.clone();
-		v.shellsort();
-	});
-}
-
-
-#[cfg(test)]
-#[bench]
-fn bench_mergesort(b : &mut Bencher) {
-	let test_vec = get_bench_vec();
-	
-	b.iter(|| {
-		let v : Vec<uint> = test_vec.clone();
-		v.mergesorted()
-	});
-}
-
-#[cfg(test)]
-#[bench]
-fn bench_bubblesort(b : &mut Bencher) {
-	let test_vec = get_bench_vec();
-	
-	b.iter(|| {
-		let mut v : Vec<uint> = test_vec.clone();
-		v.bubblesort()
-	});
-}
-
