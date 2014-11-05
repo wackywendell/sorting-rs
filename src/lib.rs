@@ -7,7 +7,7 @@
 #[warn(missing_docs)]
 
 use std::collections::HashMap;
-use std::collections::hashmap::{Occupied, Vacant};
+use std::collections::hash_map::{Occupied, Vacant};
 
 pub use sorting::{quicksort,heapsort};
 
