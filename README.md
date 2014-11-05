@@ -1,28 +1,15 @@
-Rust Scripts [![Build Status](https://travis-ci.org/wackywendell/rustscripts.svg?branch=master)](https://travis-ci.org/wackywendell/rustscripts)
+Sorting [![Build Status](https://travis-ci.org/wackywendell/sorting-rs.svg)](https://travis-ci.org/wackywendell/sorting-rs)
 ----
 
-This will be a simple collection of simple scripts written in Rust.
+This is a set of sorting algorithms, written in Rust.
 
-Right now there is only one, which creates fake words. Example output:
+Currently written:
 
-    Got wordlist, length 119095
-    Now have a map of length 34094
-    gustic
-    macrementer
-    incingroup
-    reakeupswisp
-    wartsma
-    oria
-    ottockmarial
-    ratoryadst
-    faulsass
-    polonis
-    feur
-    upstin
-    flakersbreati
-    gramcati
-    humbersonis
-    bulatteri
-    tremen
-    unkie
-    [... continues until keyboard interrupt]
+ * Bubblesort
+ * Quicksort
+ * Heapsort
+ * Selection Sort
+ * Shell Sort
+ * Merge Sort
+
+They are meant to be written simply, and therefore in an easy-to-read format. Enjoy!
