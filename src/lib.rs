@@ -43,7 +43,7 @@ mod benchmarks;
 // Public traits, for export
 
 /// In-place sorting methods
-pub trait Sortable<T : Ord> for Sized? : MutableSlice<T> {
+pub trait Sortable<T : Ord> for Sized? : std::slice::SlicePrelude<T> {
 	/// Quicksort, in-place
 	fn quicksort(&mut self){algorithms::quicksort(self.as_mut_slice())}
 	/// heapsort, in-place
@@ -57,13 +57,13 @@ pub trait Sortable<T : Ord> for Sized? : MutableSlice<T> {
 }
 
 /// Copy-and-sort methods (i.e., mergesort)
-pub trait Sorted<T : Ord + Clone> for Sized? : ImmutableSlice<T> {
+pub trait Sorted<T : Ord + Clone> : std::slice::AsSlice<T> {
 	/// merge sort, returning a sorted version
-	fn mergesorted(&self) -> Vec<T> {algorithms::mergesort(self.slice_from(0))}
+	fn mergesorted(&self) -> Vec<T> {algorithms::mergesort(self.as_slice())}
 }
 
 
 impl<T: Ord> Sortable<T> for [T]{}
 
-impl<T: Ord + Clone> Sorted<T> for [T]{}
+impl<'a, T: Ord + Clone> Sorted<T> for &'a [T]{}
 
