@@ -268,8 +268,8 @@ pub fn shellsort<H : ShellHs, T : Ord>(slice : &mut [T]){
 // TESTS
 #[test]
 fn test_partition() {
-	let tests : &mut [uint] = [1u,2,3];
-	let result : &mut [uint] = [1,2,3];
+	let tests : &mut [uint] = &mut [1u,2,3];
+	let result : &mut [uint] = &mut [1,2,3];
 	let p = partition(tests, 1);
 	assert_eq!((&tests, p), (&result, 1));
 	
@@ -279,24 +279,24 @@ fn test_partition() {
 	let p = partition(tests, 2);
 	assert_eq!((&tests, p), (&result, 2));
 	
-	let tests : &mut [uint] = [1u,3,2];
+	let tests : &mut [uint] = &mut [1u,3,2];
 	let p = partition(tests, 1);
-	let result : &mut [uint] = [1,2,3];
+	let result : &mut [uint] = &mut [1,2,3];
 	assert_eq!((&tests, p), (&result, 2));
 	
-	let tests : &mut [uint] = [1u,3,2];
+	let tests : &mut [uint] = &mut [1u,3,2];
 	let p = partition(tests, 0);
-	let result : &mut [uint] = [1,3,2];
+	let result : &mut [uint] = &mut [1,3,2];
 	assert_eq!((&tests, p), (&result, 0));
 	
-	let tests : &mut [uint] = [1u,3,2];
+	let tests : &mut [uint] = &mut [1u,3,2];
 	let p = partition(tests, 2);
-	let result : &mut [uint] = [1,2,3];
+	let result : &mut [uint] = &mut [1,2,3];
 	assert_eq!((&tests, p), (&result, 1));
 	
-	let tests : &mut [uint] = [1u,4,5,3,2];
+	let tests : &mut [uint] = &mut [1u,4,5,3,2];
 	let p = partition(tests, 2);
-	let result : &mut [uint] = [1,4,2,3,5];
+	let result : &mut [uint] = &mut [1,4,2,3,5];
 	assert_eq!((&tests, p), (&result, 4));
 }
 
@@ -306,15 +306,15 @@ fn test_partition() {
 
 #[test]
 fn test_merge(){
-	let (test_slice1, test_slice2) : (&[uint], &[uint]) = ([], []);
+	let (test_slice1, test_slice2) : (&[uint], &[uint]) = (&[], &[]);
 	assert_eq!(merge(test_slice1, test_slice2), vec!());
 	
-	let test_slice3 = [1,2,4,5];
+	let test_slice3 = &[1,2,4,5];
 	assert_eq!(merge(test_slice1, test_slice3), vec!(1,2,4,5));
 	assert_eq!(merge(test_slice3, test_slice1), vec!(1,2,4,5));
 	assert_eq!(merge(test_slice3, test_slice3), vec!(1,1,2,2,4,4,5,5));
 	
-	let test_slice4 = [3];
+	let test_slice4 = &[3];
 	assert_eq!(merge(test_slice3, test_slice4), vec!(1,2,3,4,5));
 	assert_eq!(merge(test_slice4, test_slice3), vec!(1,2,3,4,5));
 }
