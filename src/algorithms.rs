@@ -217,6 +217,7 @@ pub trait ShellHs : Iterator<uint>{
 }
 
 /// Knuth's values: 1,4,13,40,121... up to n/3
+#[deriving(Copy)]
 pub struct ShellKnuth {
 	h : uint
 }
