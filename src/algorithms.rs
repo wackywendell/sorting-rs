@@ -1,7 +1,7 @@
 //! Algorithms that back up the Sortable and Sorted traits
 
 use std;
-fn choose_pivot<T : Ord>(slice : &[T]) -> uint {
+fn choose_pivot<T : Ord>(slice : &[T]) -> usize {
 	// if slice.len() <= 2 {return slice.len() - 1;};
 	let (mut ismall, imid, mut ibig) = (0, slice.len() / 2, slice.len() - 1);
 	if slice[ibig] < slice[ismall] {std::mem::swap(&mut ibig, &mut ismall);}
@@ -13,7 +13,7 @@ fn choose_pivot<T : Ord>(slice : &[T]) -> uint {
 /// choose a pivot, then reorder so that everything to the left of the pivot is smaller, and 
 /// everything to the right is greater
 /// Assumes slice.len() > 2
-pub fn partition<T : Ord>(slice : &mut [T], pivot : uint) -> uint {
+pub fn partition<T : Ord>(slice : &mut [T], pivot : usize) -> usize {
 	let mxix = slice.len() - 1;
 	slice.swap(pivot, mxix);
 	let (mut left, mut right) = (0, mxix-1);
@@ -59,7 +59,7 @@ pub fn quicksort<T : Ord>(slice : &mut [T]){
 	let (left_slice, right_slice) = slice.split_at_mut(pivot);
 	// left_slice is [0 - pivot-1], right_slice is [pivot, end]. We don't want to include the
 	// pivot, so reassign right_slice
-	let right_slice = right_slice.tail_mut();
+	let right_slice = &mut right_slice[1..];
 	
 	quicksort(left_slice);
 	quicksort(right_slice);
@@ -70,19 +70,19 @@ pub fn quicksort<T : Ord>(slice : &mut [T]){
 
 /// Index of parent node
 #[inline]
-pub fn get_parent(ix : uint) -> uint {
+pub fn get_parent(ix : usize) -> usize {
 	(ix+1) / 2 - 1
 }
 
 /// Indices of leaf nodes
 #[inline]
-pub fn get_leaves(ix : uint) -> (uint, uint) {
+pub fn get_leaves(ix : usize) -> (usize, usize) {
 	(ix*2 + 1, ix*2+2)
 }
 
 /// Turn the array into a maximal heap
 pub fn heapify<T : Ord>(slice : &mut [T]){
-	for ix in range(1, slice.len()){
+	for ix in 1..slice.len(){
 		let mut curix = ix;
 		while curix > 0 {
 			let pix = get_parent(curix);
@@ -128,8 +128,9 @@ pub fn heap_to_sorted<T : Ord>(slice : &mut [T]){
 	
 	let ln = slice.len();
 	if ln <= 1 {return;}
-	for i in range(0, ln - 1){
-		let portion = slice.slice_to_mut(ln - i);
+	for i in 0..(ln - 1){
+		//let portion = slice.slice_to_mut(ln - i);
+		let portion = &mut slice[..(ln - i)];
 		heap_pop(portion);
 	}
 }
@@ -184,14 +185,14 @@ pub fn selsort<T : Ord>(slice : &mut [T]){
 	if slice.len() < 2 {return}
 
 	let mut min = 0;
-	for i in range(1, slice.len()){
+	for i in 1..slice.len(){
 		if slice[i] < slice[min] {
 			min = i;
 		}
 	}
 	slice.swap(0, min);
 
-	selsort(slice.slice_from_mut(1));
+	selsort(&mut slice[1..]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,8 +200,8 @@ pub fn selsort<T : Ord>(slice : &mut [T]){
 
 /// The bubblesort algorithm.
 pub fn bubblesort<T : Ord>(slice : &mut [T]){
-	for n in std::iter::range_step(slice.len() as int, 1i, -1i){	
-		for m in range(1, n as uint){
+	for n in std::iter::range_step(slice.len() as isize, 1is, -1is){	
+		for m in 1..(n as usize){
 			if slice[m] < slice[m-1] {slice.swap(m, m-1);}
 		}
 	}
@@ -211,19 +212,21 @@ pub fn bubblesort<T : Ord>(slice : &mut [T]){
 // Shell sort
 
 /// The values to go by for a shell-sort. Note that the sequence determines the complexity.
-pub trait ShellHs : Iterator<uint>{
+pub trait ShellHs : Iterator<Item=usize> {
 	/// Create a new ShellHs, for a vector of length n
-	fn new(n: uint) -> Self;
+	fn new(n: usize) -> Self;
 }
 
 /// Knuth's values: 1,4,13,40,121... up to n/3
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct ShellKnuth {
-	h : uint
+	h : usize
 }
 
-impl Iterator<uint> for ShellKnuth {
-	fn next(&mut self) -> Option<uint>{
+impl Iterator for ShellKnuth {
+	type Item = usize;
+
+	fn next(&mut self) -> Option<usize> {
 		self.h /= 3;
 		match self.h {
 			0 => None,
@@ -233,7 +236,7 @@ impl Iterator<uint> for ShellKnuth {
 }
 
 impl ShellHs for ShellKnuth {
-	fn new(n: uint) -> ShellKnuth {
+	fn new(n: usize) -> ShellKnuth {
 		let mut h = 4;
 		while h*3 <= n {
 			h = 3*h + 1;
@@ -243,7 +246,7 @@ impl ShellHs for ShellKnuth {
 	}
 }
 
-fn insertion_sort_partial<T : Ord>(slice : &mut [T], start: uint, step: uint){
+fn insertion_sort_partial<T : Ord>(slice : &mut [T], start: usize, step: usize){
 	for i in std::iter::range_step(start+step, slice.len(), step) {
 		let mut curloc = i;
 		while (curloc >= step) && slice[curloc] < slice[curloc-step] {
@@ -257,7 +260,7 @@ fn insertion_sort_partial<T : Ord>(slice : &mut [T], start: uint, step: uint){
 pub fn shellsort<H : ShellHs, T : Ord>(slice : &mut [T]){
 	let mut hs : H = ShellHs::new(slice.len());
 	for h in hs {
-		for k in range(0,h) {
+		for k in (0..h) {
 			// our sublist is now [k, h+k, 2h+k,...]
 			// We insertion sort it
 			insertion_sort_partial(slice, k, h);
@@ -269,8 +272,8 @@ pub fn shellsort<H : ShellHs, T : Ord>(slice : &mut [T]){
 // TESTS
 #[test]
 fn test_partition() {
-	let tests : &mut [uint] = &mut [1u,2,3];
-	let result : &mut [uint] = &mut [1,2,3];
+	let tests : &mut [u64] = &mut [1,2,3];
+	let result : &mut [u64] = &mut [1,2,3];
 	let p = partition(tests, 1);
 	assert_eq!((&tests, p), (&result, 1));
 	
@@ -280,24 +283,24 @@ fn test_partition() {
 	let p = partition(tests, 2);
 	assert_eq!((&tests, p), (&result, 2));
 	
-	let tests : &mut [uint] = &mut [1u,3,2];
+	let tests : &mut [u64] = &mut [1,3,2];
 	let p = partition(tests, 1);
-	let result : &mut [uint] = &mut [1,2,3];
+	let result : &mut [u64] = &mut [1,2,3];
 	assert_eq!((&tests, p), (&result, 2));
 	
-	let tests : &mut [uint] = &mut [1u,3,2];
+	let tests : &mut [u64] = &mut [1,3,2];
 	let p = partition(tests, 0);
-	let result : &mut [uint] = &mut [1,3,2];
+	let result : &mut [u64] = &mut [1,3,2];
 	assert_eq!((&tests, p), (&result, 0));
 	
-	let tests : &mut [uint] = &mut [1u,3,2];
+	let tests : &mut [u64] = &mut [1,3,2];
 	let p = partition(tests, 2);
-	let result : &mut [uint] = &mut [1,2,3];
+	let result : &mut [u64] = &mut [1,2,3];
 	assert_eq!((&tests, p), (&result, 1));
 	
-	let tests : &mut [uint] = &mut [1u,4,5,3,2];
+	let tests : &mut [u64] = &mut [1,4,5,3,2];
 	let p = partition(tests, 2);
-	let result : &mut [uint] = &mut [1,4,2,3,5];
+	let result : &mut [u64] = &mut [1,4,2,3,5];
 	assert_eq!((&tests, p), (&result, 4));
 }
 
@@ -307,7 +310,7 @@ fn test_partition() {
 
 #[test]
 fn test_merge(){
-	let (test_slice1, test_slice2) : (&[uint], &[uint]) = (&[], &[]);
+	let (test_slice1, test_slice2) : (&[u64], &[u64]) = (&[], &[]);
 	assert_eq!(merge(test_slice1, test_slice2), vec!());
 	
 	let test_slice3 = &[1,2,4,5];
@@ -333,7 +336,7 @@ fn test_indexing(){
 	assert_eq!(get_parent(6), 2);
 	assert_eq!(get_parent(7), 3);
 
-	for i in range(0, 21){
+	for i in 0..21 {
 		let (l, r) = get_leaves(i);
 		assert_eq!(get_parent(l), i);
 		assert_eq!(get_parent(r), i);
@@ -342,7 +345,7 @@ fn test_indexing(){
 
 #[cfg(test)]
 fn is_max_heap<T : Ord>(slice : &[T]) -> bool{
-	for i in range(1, slice.len()){
+	for i in (1..slice.len()){
 		let p = get_parent(i);
 		if slice[p] < slice[i] {return false;}
 	}
@@ -357,7 +360,7 @@ fn test_heapify(){
 		let unsorted_vec = test_vec.clone();
 		let test_slice = test_vec.as_mut_slice();
 		heapify(test_slice);
-		println!("Heapifying: {} -> {}", unsorted_vec.as_slice(), test_slice)
+		println!("Heapifying: {:?} -> {:?}", unsorted_vec.as_slice(), test_slice);
 		assert!(is_max_heap(test_slice));
 	}
 }
@@ -366,11 +369,14 @@ fn test_heapify(){
 // Shellsort Tests
 #[test]
 fn test_shell_hs_knuth() {
-	let hs : Vec<uint> = ShellHs::new(363).collect();
+	let shell : ShellKnuth = ShellHs::new(363);
+	let hs : Vec<usize> = shell.collect();
 	assert_eq!(hs, vec!(121, 40, 13, 4, 1));
-	let hs : Vec<uint> = ShellHs::new(362).collect();
+	let shell : ShellKnuth = ShellHs::new(362);
+	let hs : Vec<usize> = shell.collect();
 	assert_eq!(hs, vec!(40, 13, 4, 1));
-	let hs : Vec<uint> = ShellHs::new(2).collect();
+	let shell : ShellKnuth = ShellHs::new(2);
+	let hs : Vec<usize> = shell.collect();
 	assert_eq!(hs, vec!(1));
 }
 
@@ -387,7 +393,7 @@ pub fn is_sorted<T : Ord>(slice: &[T]) -> bool {
 }
 
 #[cfg(test)]
-fn get_test_vecs() -> Vec<Vec<uint>> {
+fn get_test_vecs() -> Vec<Vec<u64>> {
 	vec!(
 		vec!(), vec!(1), vec!(1,2), vec!(2,1), vec!(1,2,3), vec!(2,1,3), vec!(3,1,2), 
 		vec!(8,5,2,6,9,3), vec!(2,3,5,6,8,9), vec!(9,8,6,5,3,2), vec!(8,4,7,3,6,2,5,1),
@@ -411,9 +417,9 @@ fn test_quicksort(){
 	
 	for test_vec in test_slices.iter_mut(){
 		let test_slice = test_vec.as_mut_slice();
-		println!("Unsorted: {}", test_slice);
+		println!("Unsorted: {:?}", test_slice);
 		quicksort(test_slice);
-		println!("Sorted:   {}", test_slice);
+		println!("Sorted:   {:?}", test_slice);
 		assert!(is_sorted(test_slice));
 	}
 }
@@ -457,7 +463,7 @@ fn test_shellsort(){
 	
 	for test_vec in test_slices.iter_mut(){
 		let test_slice = test_vec.as_mut_slice();
-		shellsort(test_slice);
+		shellsort::<ShellKnuth, u64>(test_slice);
 		assert!(is_sorted(test_slice));
 	}
 }

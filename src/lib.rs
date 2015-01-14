@@ -28,12 +28,11 @@ this benchmark doesn't cover:
   * Sorting a reverse-sorted list
 
 */
-
-#[warn(non_camel_case_types)]
-#[warn(non_snake_case)]
-#[warn(unused_qualifications)]
-#[warn(non_upper_case_globals)]
-#[warn(missing_docs)]
+#![warn(non_camel_case_types)]
+#![warn(non_snake_case)]
+#![warn(unused_qualifications)]
+#![warn(non_upper_case_globals)]
+#![warn(missing_docs)]
 
 pub mod algorithms;
 
@@ -43,7 +42,7 @@ mod benchmarks;
 // Public traits, for export
 
 /// In-place sorting methods
-pub trait Sortable<T : Ord> for Sized? : std::slice::SlicePrelude<T> {
+pub trait Sortable<T : Ord> : SliceExt<Item=T> {
 	/// Quicksort, in-place
 	fn quicksort(&mut self){algorithms::quicksort(self.as_mut_slice())}
 	/// heapsort, in-place
@@ -53,17 +52,19 @@ pub trait Sortable<T : Ord> for Sized? : std::slice::SlicePrelude<T> {
 	/// selection sort, in-place
 	fn selsort(&mut self) {algorithms::selsort(self.as_mut_slice())}
 	/// shell sort, in-place
-	fn shellsort(&mut self) {algorithms::shellsort(self.as_mut_slice())}
+	fn shellsort(&mut self) {algorithms::shellsort::<algorithms::ShellKnuth, T>(self.as_mut_slice())}
 }
 
 /// Copy-and-sort methods (i.e., mergesort)
-pub trait Sorted<T : Ord + Clone> : std::slice::AsSlice<T> {
+pub trait Sorted<T : Ord + Clone> : AsSlice<T> {
 	/// merge sort, returning a sorted version
 	fn mergesorted(&self) -> Vec<T> {algorithms::mergesort(self.as_slice())}
 }
 
 
-impl<T: Ord> Sortable<T> for [T]{}
+impl<T: Ord> Sortable<T> for [T]{
+	
+}
 
 impl<'a, T: Ord + Clone> Sorted<T> for &'a [T]{}
 
