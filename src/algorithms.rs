@@ -10,7 +10,7 @@ fn choose_pivot<T : Ord>(slice : &[T]) -> usize {
 	else{imid}
 }
 
-/// choose a pivot, then reorder so that everything to the left of the pivot is smaller, and 
+/// choose a pivot, then reorder so that everything to the left of the pivot is smaller, and
 /// everything to the right is greater
 /// Assumes slice.len() > 2
 pub fn partition<T : Ord>(slice : &mut [T], pivot : usize) -> usize {
@@ -22,7 +22,7 @@ pub fn partition<T : Ord>(slice : &mut [T], pivot : usize) -> usize {
 		if slice[left] <= slice[mxix] {left += 1;}
 		else if slice[right] >= slice[mxix] {right -= 1;}
 		else {
-			slice.swap(left, right); 
+			slice.swap(left, right);
 			left += 1;
 			right -= 1;
 		}
@@ -200,7 +200,7 @@ pub fn selsort<T : Ord>(slice : &mut [T]){
 
 /// The bubblesort algorithm.
 pub fn bubblesort<T : Ord>(slice : &mut [T]){
-	for n in std::iter::range_step(slice.len() as isize, 1is, -1is){	
+	for n in std::iter::range_step(slice.len() as isize, 1is, -1is){
 		for m in 1..(n as usize){
 			if slice[m] < slice[m-1] {slice.swap(m, m-1);}
 		}
@@ -336,7 +336,7 @@ fn test_indexing(){
 	assert_eq!(get_parent(6), 2);
 	assert_eq!(get_parent(7), 3);
 
-	for i in 0..21 {
+	for i in 0us..21us {
 		let (l, r) = get_leaves(i);
 		assert_eq!(get_parent(l), i);
 		assert_eq!(get_parent(r), i);
@@ -395,7 +395,7 @@ pub fn is_sorted<T : Ord>(slice: &[T]) -> bool {
 #[cfg(test)]
 fn get_test_vecs() -> Vec<Vec<u64>> {
 	vec!(
-		vec!(), vec!(1), vec!(1,2), vec!(2,1), vec!(1,2,3), vec!(2,1,3), vec!(3,1,2), 
+		vec!(), vec!(1), vec!(1,2), vec!(2,1), vec!(1,2,3), vec!(2,1,3), vec!(3,1,2),
 		vec!(8,5,2,6,9,3), vec!(2,3,5,6,8,9), vec!(9,8,6,5,3,2), vec!(8,4,7,3,6,2,5,1),
 		vec!(8,1,7,2,6,3,5,4), vec!(8,1,7,2,6,3,5,4),
 		vec!(16,14,1,1,7,18,7,6,8,18,5),
