@@ -1,0 +1,5 @@
+{
+    "cmd": "cargo update && cargo test",
+    "sh": true,
+    "cwd": "{PROJECT_PATH}"
+}
