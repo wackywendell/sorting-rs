@@ -1,6 +1,6 @@
 /*! Basic sorting algorithms, just for fun.
 
-Note that the exported `Sortable` and `Sorted` traits provide all necessary functionality. 
+Note that the exported `Sortable` and `Sorted` traits provide all necessary functionality.
 `Sortable` provides functions for in-place sorting, and `Sorted` provides copy-sorting.
 
 Some benchmarks, all performed on a `Vec` of 2000 random `uint`s:
@@ -17,7 +17,7 @@ test benchmarks::bench_slice_sort ... bench:     66509 ns/iter (+/- 3064)
 
 `bubblesort` is by far the slowest, followed by `selsort`; both unsurprisingly slow.
 
-Interestingly, `quicksort`, `heapsort`, and possibly `shellsort` outperform 
+Interestingly, `quicksort`, `heapsort`, and possibly `shellsort` outperform
 `std::slice::MutableOrdSlice::sort()`, at least on this benchmark; the `std` one is, as I understand
 it, an optimized mergesort, and is probably faster on more general benchmarks. Here are some things
 this benchmark doesn't cover:
@@ -28,6 +28,9 @@ this benchmark doesn't cover:
   * Sorting a reverse-sorted list
 
 */
+#![feature(core)]
+#![feature(test)]
+
 #![warn(non_camel_case_types)]
 #![warn(non_snake_case)]
 #![warn(unused_qualifications)]
@@ -36,7 +39,6 @@ this benchmark doesn't cover:
 
 pub mod algorithms;
 
-#[cfg(test)]
 mod benchmarks;
 
 // Public traits, for export
@@ -67,4 +69,3 @@ impl<T: Ord> Sortable<T> for [T]{
 }
 
 impl<'a, T: Ord + Clone> Sorted<T> for &'a [T]{}
-

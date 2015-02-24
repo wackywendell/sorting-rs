@@ -1,14 +1,15 @@
 #![cfg(test)]
 
 extern crate test;
+extern crate rand;
 
 use self::test::Bencher;
-use std::rand::Rng;
+use self::rand::Rng;
 
 use {Sorted,Sortable};
 
 fn get_bench_vec() -> Vec<u64> {
-	let mut rng = ::std::rand::thread_rng();
+	let mut rng = rand::thread_rng();
 	rng.gen_iter().take(2000).collect()
 }
 
@@ -82,4 +83,3 @@ fn bench_bubblesort(b : &mut Bencher) {
 		v.bubblesort()
 	});
 }
-
