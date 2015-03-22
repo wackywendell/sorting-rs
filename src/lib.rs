@@ -28,8 +28,8 @@ this benchmark doesn't cover:
   * Sorting a reverse-sorted list
 
 */
-#![feature(core)]
-#![feature(test)]
+#![feature(core, step_by)]
+#![cfg_attr(test, feature(test))]
 
 #![warn(non_camel_case_types)]
 #![warn(non_snake_case)]
@@ -40,6 +40,9 @@ this benchmark doesn't cover:
 pub mod algorithms;
 
 mod benchmarks;
+
+extern crate core;
+use core::slice::SliceExt;
 
 // Public traits, for export
 

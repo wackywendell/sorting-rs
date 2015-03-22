@@ -200,7 +200,7 @@ pub fn selsort<T : Ord>(slice : &mut [T]){
 
 /// The bubblesort algorithm.
 pub fn bubblesort<T : Ord>(slice : &mut [T]){
-	for n in std::iter::range_step(slice.len() as isize, 1isize, -1isize){
+	for n in ((slice.len() as isize)..1isize).step_by(-1isize){
 		for m in 1..(n as usize){
 			if slice[m] < slice[m-1] {slice.swap(m, m-1);}
 		}
@@ -247,7 +247,7 @@ impl ShellHs for ShellKnuth {
 }
 
 fn insertion_sort_partial<T : Ord>(slice : &mut [T], start: usize, step: usize){
-	for i in std::iter::range_step(start+step, slice.len(), step) {
+	for i in ((start+step)..slice.len()).step_by(step) {
 		let mut curloc = i;
 		while (curloc >= step) && slice[curloc] < slice[curloc-step] {
 			slice.swap(curloc, curloc-step);
