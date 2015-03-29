@@ -174,7 +174,7 @@ pub fn mergesort<T : Ord + Clone>(slice : &[T]) -> Vec<T> {
 	let v1 = mergesort(s1);
 	let v2 = mergesort(s2);
 	
-	merge(v1.as_slice(), v2.as_slice())
+	merge(v1.as_ref(), v2.as_ref())
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -358,9 +358,9 @@ fn test_heapify(){
 	
 	for test_vec in test_slices.iter_mut(){
 		let unsorted_vec = test_vec.clone();
-		let test_slice = test_vec.as_mut_slice();
+		let test_slice = test_vec.as_mut();
 		heapify(test_slice);
-		println!("Heapifying: {:?} -> {:?}", unsorted_vec.as_slice(), test_slice);
+		println!("Heapifying: {:?} -> {:?}", unsorted_vec, test_slice);
 		assert!(is_max_heap(test_slice));
 	}
 }
@@ -416,7 +416,7 @@ fn test_quicksort(){
 	let mut test_slices = get_test_vecs();
 	
 	for test_vec in test_slices.iter_mut(){
-		let test_slice = test_vec.as_mut_slice();
+		let test_slice = test_vec.as_mut();
 		println!("Unsorted: {:?}", test_slice);
 		quicksort(test_slice);
 		println!("Sorted:   {:?}", test_slice);
@@ -429,9 +429,9 @@ fn test_mergesort(){
 	let mut test_slices = get_test_vecs();
 	
 	for test_vec in test_slices.iter_mut(){
-		let test_slice = test_vec.as_mut_slice();
+		let test_slice = test_vec.as_mut();
 		let v = mergesort(test_slice);
-		assert!(is_sorted(v.as_slice()));
+		assert!(is_sorted(v.as_ref()));
 	}
 }
 
@@ -440,7 +440,7 @@ fn test_selectionsort(){
 	let mut test_slices = get_test_vecs();
 	
 	for test_vec in test_slices.iter_mut(){
-		let test_slice = test_vec.as_mut_slice();
+		let test_slice = test_vec.as_mut();
 		selsort(test_slice);
 		assert!(is_sorted(test_slice));
 	}
@@ -451,7 +451,7 @@ fn test_bubblesort(){
 	let mut test_slices = get_test_vecs();
 	
 	for test_vec in test_slices.iter_mut(){
-		let test_slice = test_vec.as_mut_slice();
+		let test_slice = test_vec.as_mut();
 		bubblesort(test_slice);
 		assert!(is_sorted(test_slice));
 	}
@@ -462,7 +462,7 @@ fn test_shellsort(){
 	let mut test_slices = get_test_vecs();
 	
 	for test_vec in test_slices.iter_mut(){
-		let test_slice = test_vec.as_mut_slice();
+		let test_slice = test_vec.as_mut();
 		shellsort::<ShellKnuth, u64>(test_slice);
 		assert!(is_sorted(test_slice));
 	}
@@ -473,7 +473,7 @@ fn test_heapsort(){
 	let mut test_slices = get_test_vecs();
 	
 	for test_vec in test_slices.iter_mut(){
-		let test_slice = test_vec.as_mut_slice();
+		let test_slice = test_vec.as_mut();
 		heapsort(test_slice);
 		assert!(is_sorted(test_slice));
 	}

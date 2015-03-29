@@ -20,7 +20,7 @@ fn bench_slice_sort(b : &mut Bencher) {
 	
 	b.iter(|| {
 		let mut v : Vec<u64> = test_vec.clone();
-		v.as_mut_slice().sort();
+		v.as_mut().sort();
 	});
 }
 
@@ -70,7 +70,8 @@ fn bench_mergesort(b : &mut Bencher) {
 	
 	b.iter(|| {
 		let v : Vec<u64> = test_vec.clone();
-		v.as_slice().mergesorted()
+		let v_ref : &[u64] = v.as_ref();
+		v_ref.mergesorted()
 	});
 }
 

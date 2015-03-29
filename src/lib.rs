@@ -28,7 +28,7 @@ this benchmark doesn't cover:
   * Sorting a reverse-sorted list
 
 */
-#![feature(core, step_by)]
+#![feature(step_by, slice_patterns, convert)]
 #![cfg_attr(test, feature(test))]
 
 #![warn(non_camel_case_types)]
@@ -41,29 +41,28 @@ pub mod algorithms;
 
 mod benchmarks;
 
-extern crate core;
-use core::slice::SliceExt;
+use std::convert::AsMut;
 
 // Public traits, for export
 
 /// In-place sorting methods
-pub trait Sortable<T : Ord> : SliceExt<Item=T> {
+pub trait Sortable<T : Ord> : AsMut<[T]> {
 	/// Quicksort, in-place
-	fn quicksort(&mut self){algorithms::quicksort(self.as_mut_slice())}
+	fn quicksort(&mut self){algorithms::quicksort(self.as_mut())}
 	/// heapsort, in-place
-	fn heapsort(&mut self){algorithms::heapsort(self.as_mut_slice())}
+	fn heapsort(&mut self){algorithms::heapsort(self.as_mut())}
 	/// bubblesort, in-place
-	fn bubblesort(&mut self){algorithms::bubblesort(self.as_mut_slice())}
+	fn bubblesort(&mut self){algorithms::bubblesort(self.as_mut())}
 	/// selection sort, in-place
-	fn selsort(&mut self) {algorithms::selsort(self.as_mut_slice())}
+	fn selsort(&mut self) {algorithms::selsort(self.as_mut())}
 	/// shell sort, in-place
-	fn shellsort(&mut self) {algorithms::shellsort::<algorithms::ShellKnuth, T>(self.as_mut_slice())}
+	fn shellsort(&mut self) {algorithms::shellsort::<algorithms::ShellKnuth, T>(self.as_mut())}
 }
 
 /// Copy-and-sort methods (i.e., mergesort)
-pub trait Sorted<T : Ord + Clone> : AsSlice<T> {
+pub trait Sorted<T : Ord + Clone> : AsRef<[T]> {
 	/// merge sort, returning a sorted version
-	fn mergesorted(&self) -> Vec<T> {algorithms::mergesort(self.as_slice())}
+	fn mergesorted(&self) -> Vec<T> {algorithms::mergesort(self.as_ref())}
 }
 
 
