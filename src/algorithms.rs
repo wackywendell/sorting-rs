@@ -218,7 +218,7 @@ pub trait ShellHs : Iterator<Item=usize> {
 }
 
 /// Knuth's values: 1,4,13,40,121... up to n/3
-#[derive(Copy)]
+#[derive(Copy, Clone, Debug)]
 pub struct ShellKnuth {
 	h : usize
 }
