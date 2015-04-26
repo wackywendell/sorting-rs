@@ -6,3 +6,4 @@ authors = [ "wackywendell@gmail.com" ]
 
 [dependencies]
 rand = "*"
+itertools = "*" # TODO: only needed for replacing step_by

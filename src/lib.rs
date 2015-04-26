@@ -28,14 +28,13 @@ this benchmark doesn't cover:
   * Sorting a reverse-sorted list
 
 */
-#![feature(step_by, slice_patterns)]
-#![cfg_attr(test, feature(test))]
-
 #![warn(non_camel_case_types)]
 #![warn(non_snake_case)]
 #![warn(unused_qualifications)]
 #![warn(non_upper_case_globals)]
 #![warn(missing_docs)]
+
+extern crate itertools;
 
 pub mod algorithms;
 

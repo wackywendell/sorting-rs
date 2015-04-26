@@ -1,6 +1,8 @@
 //! Algorithms that back up the Sortable and Sorted traits
 
 use std;
+use itertools::Itertools;
+
 fn choose_pivot<T : Ord>(slice : &[T]) -> usize {
 	// if slice.len() <= 2 {return slice.len() - 1;};
 	let (mut ismall, imid, mut ibig) = (0, slice.len() / 2, slice.len() - 1);
@@ -165,11 +167,19 @@ pub fn merge<T : Ord + Clone>(slice1 : &[T], slice2 : &[T]) -> Vec<T> {
 
 /// Basic mergesort. NOT in-place
 pub fn mergesort<T : Ord + Clone>(slice : &[T]) -> Vec<T> {
-	match slice {
-		[] => {return vec!();},
-		[ref v] => {return vec!(v.clone());},
+	// TODO, once we get slicking syntax:
+	// match slice {
+	// 	[] => {return vec!();},
+	// 	[ref v] => {return vec!(v.clone());},
+	// 	_ => {}
+	// }
+	
+	match slice.len() {
+		0 => {return vec!();},
+		1 => {return vec!(slice[0].clone());},
 		_ => {}
 	}
+	
 	let (s1, s2) = slice.split_at(slice.len() / 2);
 	let v1 = mergesort(s1);
 	let v2 = mergesort(s2);
@@ -200,7 +210,7 @@ pub fn selsort<T : Ord>(slice : &mut [T]){
 
 /// The bubblesort algorithm.
 pub fn bubblesort<T : Ord>(slice : &mut [T]){
-	for n in ((slice.len() as isize)..1isize).step_by(-1isize){
+	for n in (0..(slice.len() as isize + 1)).rev(){
 		for m in 1..(n as usize){
 			if slice[m] < slice[m-1] {slice.swap(m, m-1);}
 		}
@@ -247,7 +257,8 @@ impl ShellHs for ShellKnuth {
 }
 
 fn insertion_sort_partial<T : Ord>(slice : &mut [T], start: usize, step: usize){
-	for i in ((start+step)..slice.len()).step_by(step) {
+	//TODO: step -> step_by once that stabilizes
+	for i in ((start+step)..slice.len()).step(step) {
 		let mut curloc = i;
 		while (curloc >= step) && slice[curloc] < slice[curloc-step] {
 			slice.swap(curloc, curloc-step);
@@ -382,12 +393,17 @@ fn test_shell_hs_knuth() {
 
 /// Test if a slice is in a sorted state.
 pub fn is_sorted<T : Ord>(slice: &[T]) -> bool {
-	for win in slice.windows(2){
-		match win {
-			[ref a, ref b] if a <= b => continue,
-			[_, _] => return false,
-			_ => panic!("slice.windows(2) returned a window with size {} != 2", win.len())
-		}
+	for win in slice.windows(2) {
+		// TODO: once we get slicing syntax back
+		// match win {
+		// 	[ref a, ref b] if a <= b => continue,
+		// 	[_, _] => return false,
+		// 	_ => panic!("slice.windows(2) returned a window with size {} != 2", win.len())
+		// }
+		
+		assert_eq!(win.len(), 2); // slice.windows(2) should always return a slice of size 2
+		if win[0] <= win[1] {continue;}
+		else {return false;};
 	}
 	true
 }
