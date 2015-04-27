@@ -1,1 +1,9 @@
 language: rust
+rust:
+  - nightly
+  - beta
+script:
+  - cargo build --verbose
+  - cargo test --verbose
+  - cargo doc --verbose
+  - '[ "$TRAVIS_RUST_VERSION" = "beta" ] || cargo bench --verbose # adapted from rust-itertools'
