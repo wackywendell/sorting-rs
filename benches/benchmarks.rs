@@ -1,12 +1,15 @@
 #![cfg(test)]
 
+#![feature(test)]
+
 extern crate test;
 extern crate rand;
+extern crate sorting;
 
-use self::test::Bencher;
-use self::rand::Rng;
+use test::Bencher;
+use rand::Rng;
 
-use {Sorted,Sortable};
+use sorting::{Sorted,Sortable};
 
 fn get_bench_vec() -> Vec<u64> {
 	let mut rng = rand::thread_rng();

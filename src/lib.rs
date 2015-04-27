@@ -38,8 +38,6 @@ extern crate itertools;
 
 pub mod algorithms;
 
-mod benchmarks;
-
 use std::convert::AsMut;
 
 // Public traits, for export
